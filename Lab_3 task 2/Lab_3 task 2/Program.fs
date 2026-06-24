@@ -1,6 +1,5 @@
-﻿open System
+open System
 
-// Проверка ввода символа
 let rec readChar prompt =
     printf "%s" prompt
     let input = Console.ReadLine()
@@ -15,7 +14,6 @@ let rec readChar prompt =
         printfn "Ошибка: введите ровно один символ!"
         readChar prompt
 
-// Проверка ввода целого положительного числа
 let rec readPositiveInt prompt =
     printf "%s" prompt
     match Int32.TryParse(Console.ReadLine()) with
@@ -27,23 +25,28 @@ let rec readPositiveInt prompt =
         printfn "Ошибка! Введите целое число."
         readPositiveInt prompt
 
-// Формирование строки из последовательности символов с помощью Seq.fold
 let buildStringFromSeq (chars: seq<char>) =
     chars
     |> Seq.fold (fun acc ch -> acc + string ch) ""
 
+// Функция для создания отложенной последовательности символов
+let lazyCharSequence count =
+    let lazyValues = 
+        [| for i in 0..count-1 -> 
+            lazy (readChar (sprintf "Введите символ %d: " (i + 1))) |]
+    
+    // Функция для получения значения по индексу с вычислением только при необходимости
+    let getValue index = lazyValues.[index].Value
+    
+    Seq.init count getValue
+
 [<EntryPoint>]
 let main _ =
-    // Ввод количества символов
     let count = readPositiveInt "Введите количество символов: "
     
-    // Создание последовательности символов с помощью Seq.init
-    // и кеширование для предотвращения повторного ввода
-    let charsSeq =
-        Seq.init count (fun i -> readChar (sprintf "Введите символ %d: " (i + 1)))
-        |> Seq.cache
+    // Создание последовательности с отложенными вычислениями
+    let charsSeq = lazyCharSequence count
     
-    // Формирование строки из последовательности
     let resultString = buildStringFromSeq charsSeq
     
     // Вывод результатов
