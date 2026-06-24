@@ -1,6 +1,5 @@
-﻿open System
+open System
 
-// Проверка ввода вещественного числа.
 let rec readFloat prompt =
     printf "%s" prompt
     match Double.TryParse(Console.ReadLine()) with
@@ -9,7 +8,6 @@ let rec readFloat prompt =
         printfn "Ошибка! Введите корректное вещественное число."
         readFloat prompt
 
-// Проверка ввода целого положительного числа.
 let rec readPositiveInt prompt =
     printf "%s" prompt
     match Int32.TryParse(Console.ReadLine()) with
@@ -21,7 +19,6 @@ let rec readPositiveInt prompt =
         printfn "Ошибка! Введите целое число."
         readPositiveInt prompt
 
-// Получение последней цифры вещественного числа.
 let lastDigit (x: float) =
     x.ToString()
     |> Seq.filter Char.IsDigit
@@ -29,23 +26,27 @@ let lastDigit (x: float) =
     |> string
     |> Int32.Parse
 
+// Функция для создания отложенной последовательности
+let lazySequence count =
+    let lazyValues = 
+        [| for i in 0..count-1 -> 
+            lazy (readFloat (sprintf "Число %d: " (i + 1))) |]
+    
+    // Функция для получения значения по индексу с вычислением только при необходимости
+    let getValue index = lazyValues.[index].Value
+    
+    Seq.init count getValue
+
 [<EntryPoint>]
 let main _ =
-    printfn "=== Получение последних цифр вещественных чисел ===\n"
-
-    // Ввод количества чисел.
     let count = readPositiveInt "Введите количество чисел: "
 
-    // Создание последовательности чисел с помощью Seq.init
-    // и кеширование для предотвращения повторного ввода.
-    let numbersSeq =
-        Seq.init count (fun i -> readFloat (sprintf "Число %d: " (i + 1)))
-        |> Seq.cache
+    // Создание последовательности с отложенными вычислениями
+    let numbersSeq = lazySequence count
 
     // Получение последовательности последних цифр с помощью Seq.map.
     let digitsSeq = numbersSeq |> Seq.map lastDigit
 
-    // Вывод результатов.
     printfn "\nРезультат:"
     Seq.zip numbersSeq digitsSeq
     |> Seq.iter (fun (num, digit) -> printfn "%g -> %d" num digit)
